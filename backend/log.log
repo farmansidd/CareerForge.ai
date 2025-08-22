@@ -1,0 +1,7 @@
+xhr.js:195 XHR finished loading: GET "http://localhost:8000/api/v1/dashboard/recommendations".
+xhr.js:195 XHR finished loading: GET "http://localhost:8000/api/v1/roadmaps".
+RoadmapGeneratorForm.tsx:36 Generated Roadmap: 
+{title: 'Python Developer Roadmap', description: 'Step-by-step roadmap to learn Python development', id: 29, owner_id: 22, topics: Array(6)}
+xhr.js:195 XHR finished loading: POST "http://localhost:8000/api/v1/roadmaps/generate".
+﻿
+

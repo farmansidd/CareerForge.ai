@@ -1,0 +1,26 @@
+{
+  "roadmap": {
+    "title": "Python Developer Roadmap",
+    "description": "A comprehensive guide to becoming a Python developer",
+    "topics": [
+      {
+        "name": "Python Basics",
+        "description": "Learn fundamental Python concepts",
+        "subtopics": [
+          {
+            "name": "Variables and Data Types",
+            "description": "Understanding Python data types",
+            "skills": [
+              {
+                "name": "Basic Python Syntax",
+                "description": "Learn Python syntax and structure",
+                "estimated_hours": 10,
+                "difficulty": "Beginner"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
