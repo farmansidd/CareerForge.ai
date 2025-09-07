@@ -13,7 +13,7 @@ export interface Experience {
   location: string;
   startDate: string;
   endDate: string;
-  description: string[];
+  description: string;
 }
 
 export interface Education {

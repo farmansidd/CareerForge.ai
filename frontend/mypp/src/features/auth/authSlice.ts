@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import authService from './authService';
-import { AuthResponse, AuthState, RegisterData, Credentials } from './authTypes';
+import { AuthResponse, AuthState, RegisterData, Credentials, User } from './authTypes';
 import { RootState, AppDispatch } from '../../store/store';
 
 // Helper to load user from localStorage
@@ -27,7 +27,7 @@ const initialState: AuthState = {
 
 // Register user
 export const register = createAsyncThunk<
-  AuthResponse,
+  User,
   RegisterData,
   { rejectValue: string; state: RootState; dispatch: AppDispatch }
 >('auth/register', async (userData, thunkAPI) => {
@@ -93,10 +93,10 @@ export const authSlice = createSlice({
       .addCase(register.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(register.fulfilled, (state, action: PayloadAction<AuthResponse>) => {
+      .addCase(register.fulfilled, (state, action: PayloadAction<User>) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.user = action.payload.user;
+        state.user = action.payload;
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;

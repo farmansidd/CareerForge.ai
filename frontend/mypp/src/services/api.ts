@@ -18,7 +18,7 @@ api.interceptors.request.use(
     if (csrfToken) {
       config.headers.set('X-CSRF-Token', csrfToken);
     }
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -76,5 +76,10 @@ export const updateSkillStatus = async (skillId: number, status: string) => {
 
 export const generateRoadmap = async (goal: string) => {
   const response = await api.post('/roadmaps/generate', { goal });
+  return response.data;
+};
+
+export const getDashboard = async () => {
+  const response = await api.get('/dashboard');
   return response.data;
 };

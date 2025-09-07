@@ -38,7 +38,7 @@ const resumeSlice = createSlice({
         location: '',
         startDate: '',
         endDate: '',
-        description: [],
+        description: '',
       });
     },
     updateExperience: (state, action: PayloadAction<{ id: string; data: Partial<Experience> }>) => {
@@ -91,27 +91,10 @@ const resumeSlice = createSlice({
         url: '',
       });
     },
-    updateProject: (state, action: PayloadAction<{ id: string; data: Partial<Omit<Project, 'technologies'> & { technologies?: string | string[] }> }>) => {
+    updateProject: (state, action: PayloadAction<{ id: string; data: Partial<Project> }>) => {
       const index = state.projects.findIndex(p => p.id === action.payload.id);
       if (index !== -1) {
-        const project = state.projects[index];
-        const { data } = action.payload;
-
-        let technologiesToStore: string[] = project.technologies; // Default to existing technologies
-
-        if (data.technologies !== undefined) {
-          if (typeof data.technologies === 'string') {
-            technologiesToStore = data.technologies.split(',').map(t => t.trim());
-          } else if (Array.isArray(data.technologies)) {
-            technologiesToStore = data.technologies;
-          }
-        }
-
-        state.projects[index] = {
-          ...project,
-          ...data,
-          technologies: technologiesToStore,
-        };
+        state.projects[index] = { ...state.projects[index], ...action.payload.data };
       }
     },
     removeProject: (state, action: PayloadAction<string>) => {

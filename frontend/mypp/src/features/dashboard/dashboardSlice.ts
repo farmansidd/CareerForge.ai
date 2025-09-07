@@ -1,12 +1,38 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import dashboardService from './dashboardService';
-import { DashboardStats, CareerGoal as Goal, Skill, AIRecommendation } from './types';
+import { CareerGoal as Goal, AIRecommendation } from './types';
 
+// Types that match the actual API response from GET /dashboard/{user_id}
+export interface ApiSkill {
+  skill_id: number;
+  name: string;
+  category: string;
+  difficulty: string;
+  status: 'not_started' | 'pending' | 'completed';
+  due_date: string | null;
+}
+
+export interface ApiDashboardStats {
+  total_skills: number;
+  completed_skills: number;
+  pending_skills: number;
+  not_started_skills: number;
+  progress_percent: number;
+}
+
+export interface DashboardData {
+    user_id: number;
+    username: string;
+    skills: ApiSkill[];
+    dashboard_stats: ApiDashboardStats;
+}
+
+// The shape of our state in the Redux store
 interface DashboardState {
-  stats: DashboardStats | null;
-  goals: Goal[];
-  skills: Skill[];
-  recommendations: AIRecommendation[];
+  stats: ApiDashboardStats | null;
+  skills: ApiSkill[];
+  goals: Goal[]; // Kept for other potential features on the page
+  recommendations: AIRecommendation[]; // Kept for other potential features
   isError: boolean;
   isSuccess: boolean;
   isLoading: boolean;
@@ -38,8 +64,8 @@ const loadGoalsFromLocalStorage = (): Goal[] => {
 
 const initialState: DashboardState = {
   stats: null,
-  goals: loadGoalsFromLocalStorage(), // Load from local storage
   skills: [],
+  goals: loadGoalsFromLocalStorage(),
   recommendations: [],
   isError: false,
   isSuccess: false,
@@ -47,13 +73,19 @@ const initialState: DashboardState = {
   message: '',
 };
 
-export const getDashboardStats = createAsyncThunk(
-  'dashboard/getStats',
+// Thunks for async actions
+export const getUserDashboard = createAsyncThunk(
+  'dashboard/getUserDashboard',
   async (_, thunkAPI) => {
     try {
-      return await dashboardService.getDashboardStats();
+      console.log('Dashboard: Calling getUserDashboard API');
+      const result = await dashboardService.getUserDashboard();
+      console.log('Dashboard: API response received:', result);
+      return result;
     } catch (error: any) {
+      console.error('Dashboard: API call failed:', error);
       const message = (error.response?.data?.message) || error.message || error.toString();
+      console.error('Dashboard: Error message:', message);
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -64,18 +96,6 @@ export const getGoals = createAsyncThunk(
   async (params: any, thunkAPI) => {
     try {
       return await dashboardService.getGoals(params);
-    } catch (error: any) {
-      const message = (error.response?.data?.message) || error.message || error.toString();
-      return thunkAPI.rejectWithValue(message);
-    }
-  }
-);
-
-export const getSkills = createAsyncThunk(
-  'dashboard/getSkills',
-  async (params: any, thunkAPI) => {
-    try {
-      return await dashboardService.getSkills(params);
     } catch (error: any) {
       const message = (error.response?.data?.message) || error.message || error.toString();
       return thunkAPI.rejectWithValue(message);
@@ -99,66 +119,43 @@ export const getAIRecommendations = createAsyncThunk(
   'dashboard/getAIRecommendations',
   async (_, thunkAPI) => {
     try {
-      return await dashboardService.getAIRecommendations();
+      console.log('Dashboard: Calling getAIRecommendations API');
+      const result = await dashboardService.getAIRecommendations();
+      console.log('Dashboard: AI Recommendations API response received:', result);
+      return result;
     } catch (error: any) {
+      console.error('Dashboard: AI Recommendations API call failed:', error);
       const message = (error.response?.data?.message) || error.message || error.toString();
+      console.error('Dashboard: AI Recommendations Error message:', message);
       return thunkAPI.rejectWithValue(message);
     }
   }
 );
+
 
 export const dashboardSlice = createSlice({
   name: 'dashboard',
   initialState,
   reducers: {
     reset: () => initialState,
-    setMockStats: (state) => {
-      state.isLoading = false;
-      state.isSuccess = true;
-      state.stats = {
-        total_goals: 10,
-        goals_completed: 5,
-        skills_acquired: 12,
-        pending_tasks: 3,
-        career_readiness: 75,
-        active_days: 5,
-        learning_streak: 7,
-        recent_activity: [
-          { 
-            type: 'activity', 
-            description: 'Completed "Introduction to React"', 
-            timestamp: '2 days ago' 
-          },
-          { 
-            type: 'activity', 
-            description: 'Started "Advanced TypeScript"', 
-            timestamp: '1 day ago' 
-          },
-          { 
-            type: 'goal', 
-            description: 'Set a new goal: "Master Redux Toolkit"', 
-            timestamp: '1 day ago' 
-          },
-        ],
-      };
-      
-    }
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getDashboardStats.pending, (state) => {
+      .addCase(getUserDashboard.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(getDashboardStats.fulfilled, (state, action: PayloadAction<DashboardStats>) => {
+      .addCase(getUserDashboard.fulfilled, (state, action: PayloadAction<DashboardData>) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.stats = action.payload;
+        state.stats = action.payload.dashboard_stats;
+        state.skills = action.payload.skills;
       })
-      .addCase(getDashboardStats.rejected, (state, action: PayloadAction<unknown>) => {
+      .addCase(getUserDashboard.rejected, (state, action: PayloadAction<unknown>) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload as string;
       })
+      // Keep other thunks for now, in case other components use them
       .addCase(getGoals.pending, (state) => {
         state.isLoading = true;
       })
@@ -166,22 +163,9 @@ export const dashboardSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.goals = action.payload;
-        saveGoalsToLocalStorage(state.goals); // Save to local storage
+        saveGoalsToLocalStorage(state.goals);
       })
       .addCase(getGoals.rejected, (state, action: PayloadAction<unknown>) => {
-        state.isLoading = false;
-        state.isError = true;
-        state.message = action.payload as string;
-      })
-      .addCase(getSkills.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(getSkills.fulfilled, (state, action: PayloadAction<Skill[]>) => {
-        state.isLoading = false;
-        state.isSuccess = true;
-        state.skills = action.payload;
-      })
-      .addCase(getSkills.rejected, (state, action: PayloadAction<unknown>) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload as string;
@@ -192,8 +176,8 @@ export const dashboardSlice = createSlice({
       .addCase(createGoal.fulfilled, (state, action: PayloadAction<Goal>) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.goals.push(action.payload); // Add the new goal
-        saveGoalsToLocalStorage(state.goals); // Save to local storage
+        state.goals.push(action.payload);
+        saveGoalsToLocalStorage(state.goals);
       })
       .addCase(createGoal.rejected, (state, action: PayloadAction<unknown>) => {
         state.isLoading = false;
@@ -216,5 +200,11 @@ export const dashboardSlice = createSlice({
   },
 });
 
-export const { reset, setMockStats } = dashboardSlice.actions;
+export const { reset } = dashboardSlice.actions;
 export default dashboardSlice.reducer;
+
+// Selectors
+export const selectDashboardStats = (state: { dashboard: DashboardState }) => state.dashboard.stats;
+export const selectUserSkills = (state: { dashboard: DashboardState }) => state.dashboard.skills;
+export const selectCareerGoals = (state: { dashboard: DashboardState }) => state.dashboard.goals;
+export const selectAIRecommendations = (state: { dashboard: DashboardState }) => state.dashboard.recommendations;

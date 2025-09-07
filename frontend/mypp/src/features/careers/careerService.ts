@@ -27,9 +27,11 @@ export const getRecommendedCareers = async (skills: string[]): Promise<Career[]>
   return response.data;
 };
 
-export default {
+const careerService = {
   fetchCareers,
   fetchCareerById,
   searchCareers,
   getRecommendedCareers,
 };
+
+export default careerService;

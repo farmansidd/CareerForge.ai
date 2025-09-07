@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRoadmapStore } from '../../store/roadmapStore'; // Import the store
-import LoadingSpinner from '../../components/LoadingSpinner';
 import Button from '../../components/Button';
 import { Roadmap } from '../../types';
 
@@ -24,25 +23,48 @@ const RoadmapGeneratorForm: React.FC<RoadmapGeneratorFormProps> = ({ onRoadmapGe
       return;
     }
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     if (!token) {
       setError('You must be logged in to generate a roadmap.');
       navigate('/login');
       return;
     }
 
-    const newRoadmap = await generateRoadmap(goal);
+    try {
+      const newRoadmap = await generateRoadmap(goal);
 
-    console.log("Generated Roadmap:", newRoadmap);
+      console.log("Generated Roadmap:", newRoadmap);
+      console.log("Roadmap ID:", newRoadmap?.id);
+      console.log("Roadmap object structure:", JSON.stringify(newRoadmap, null, 2));
 
-    if (newRoadmap) {
-      if (onRoadmapGenerated) {
-        onRoadmapGenerated(newRoadmap);
+      if (newRoadmap && newRoadmap.id) {
+        if (onRoadmapGenerated) {
+          onRoadmapGenerated(newRoadmap);
+        } else {
+          navigate(`/roadmaps/${newRoadmap.id}`);
+        }
       } else {
-        navigate(`/roadmaps/${newRoadmap.id}`);
+        const errorMsg = storeError || 'Failed to generate roadmap. The roadmap was created but no ID was returned.';
+        console.error("Roadmap generation failed - missing ID:", errorMsg);
+        setError(errorMsg);
+        
+        // If roadmap was created but missing ID, try to fetch user's roadmaps
+        if (newRoadmap && !newRoadmap.id) {
+          console.log("Roadmap object exists but missing ID, attempting to fetch user roadmaps...");
+          // This might help identify if the roadmap was created but response format is different
+        }
       }
-    } else {
-      setError(storeError || 'Failed to generate roadmap. Please try again.');
+    } catch (error: any) {
+      console.error("Roadmap generation error:", error);
+      console.error("Error details:", error.response?.data);
+      
+      if (error.response?.status === 401) {
+        setError('Your session has expired. Please log in again.');
+        navigate('/login');
+      } else {
+        const errorDetail = error.response?.data?.detail || error.message || 'Failed to generate roadmap. Please try again.';
+        setError(errorDetail);
+      }
     }
   };
 

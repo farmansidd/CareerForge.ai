@@ -6,10 +6,14 @@ import {
   FaChartLine, FaBullseye, FaCogs, FaLightbulb, 
   FaGraduationCap, FaHandsHelping, FaTools, FaQuestionCircle, FaFileAlt
 } from 'react-icons/fa';
+import { LogOut } from 'lucide-react'; // Import LogOut from lucide-react
+import { useAuth } from '../../context/AuthContext'; // Import useAuth
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false); // New state for profile dropdown
+  const { user, logout } = useAuth(); // Use useAuth hook
 
   return (
     <nav className="sticky top-0 z-50 bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 shadow-xl backdrop-filter backdrop-blur-lg bg-opacity-90 border-b border-cyan-500/30">
@@ -22,7 +26,7 @@ const Navbar: React.FC = () => {
           </div>
           <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 tracking-tight">
             CareerForge<span className="text-cyan-300">.ai</span>
-          </span>/
+          </span>
         </Link>
 
         {/* Middle Section: Desktop Navigation */}
@@ -83,7 +87,57 @@ const Navbar: React.FC = () => {
         </div>
 
         {/* Right Section: Profile Section */}
-      
+        <div className="hidden md:flex items-center space-x-4">
+          {user ? (
+            <>
+              <div className="relative">
+                <button
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors group"
+                >
+                  <FaUserCircle className="text-cyan-400 text-xl" />
+                  <span className="text-lg whitespace-nowrap">{user.email}</span>
+                  <FaChevronDown className={`text-sm transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {profileOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg py-2 z-50 border border-gray-700">
+                    <Link
+                      to="/profile"
+                      className="flex items-center space-x-3 px-4 py-2 text-gray-300 hover:bg-gray-700/70 hover:text-white transition"
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      <FaUserCircle className="text-cyan-400" />
+                      <span>Profile</span>
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setProfileOpen(false);
+                      }}
+                      className="flex items-center space-x-3 px-4 py-2 text-gray-300 hover:bg-gray-700/70 hover:text-white transition w-full text-left"
+                    >
+                      <LogOut className="text-red-400" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="text-lg font-medium text-gray-300 hover:text-white transition-colors">
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-md text-white font-medium hover:from-cyan-600 hover:to-blue-700 transition-all"
+              >
+                Register
+              </Link>
+            </>
+          )}
+        </div>
 
         {/* Mobile Menu Button */}
         <button 

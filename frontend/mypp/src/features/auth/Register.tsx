@@ -1,15 +1,12 @@
 // src/features/auth/Register.tsx
-import React, { useState, useEffect } from 'react'; // Import useEffect
-import { useDispatch, useSelector } from 'react-redux';
-import { register, reset } from './authSlice'; // Import reset
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import type { AppDispatch, RootState } from '../../store/store';
+import { useAuth } from '../../context/AuthContext'; // Import useAuth
 import { FaArrowRight, FaGithub } from 'react-icons/fa';
 
 export default function Register() {
-  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { isLoading, isError, message } = useSelector((state: RootState) => state.auth);
+  const { register, loading } = useAuth(); // Use useAuth hook
 
   const [formData, setFormData] = useState({
     username: '',
@@ -18,23 +15,8 @@ export default function Register() {
     confirmPassword: ''
   });
 
-  // State for local form errors (e.g., password mismatch)
+  // State for local form errors (e.g., password mismatch, API errors)
   const [localError, setLocalError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isError) {
-      setLocalError(message); // Display Redux error message
-    } else {
-      setLocalError(null); // Clear local error if Redux error is gone
-    }
-
-    // Navigate to dashboard only if registration is successful and user data is fetched
-    // The user object will be populated by fetchUser thunk after successful registration
-    // For now, we just reset the state. Navigation will be handled by a separate effect
-    // or by checking the user state in a higher-level component.
-    // dispatch(reset()); // Reset state after error or success
-  }, [isError, message, dispatch]);
-
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -50,16 +32,10 @@ export default function Register() {
       return;
     }
     
-    const resultAction = await dispatch(register({
-      username: formData.username,
-      email: formData.email,
-      password: formData.password
-    }));
-    
-    if (register.fulfilled.match(resultAction)) {
-      // Navigation will be handled by a separate effect or by checking the user state
-      // in a higher-level component after fetchUser populates the user.
-      navigate('/dashboard'); // Assuming successful registration leads to dashboard
+    try {
+      await register(formData.username, formData.email, formData.password);
+    } catch (error: any) {
+      setLocalError(error.response?.data?.detail || 'Registration failed. Please try again.');
     }
   };
 
@@ -117,9 +93,9 @@ export default function Register() {
           </div>
 
           {/* Form */}
-          {(isError || localError) && ( // Display Redux error or local error
+          {localError && ( // Display local error
             <div className="mb-4 p-3 bg-red-900/50 border border-red-700/50 rounded-lg text-red-300 text-center">
-              {localError || message}
+              {localError}
             </div>
           )}
 
@@ -210,10 +186,10 @@ export default function Register() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={loading}
               className="w-full group flex items-center justify-center px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-bold text-lg transition-all duration-300 hover:from-cyan-600 hover:to-blue-700 hover:scale-[1.02] shadow-lg hover:shadow-cyan-500/30"
             >
-              {isLoading ? (
+              {loading ? (
                 <span>Creating Account...</span>
               ) : (
                 <>

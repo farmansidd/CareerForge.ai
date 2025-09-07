@@ -10,25 +10,25 @@ const GuidesPage: React.FC = () => {
           <div className="bg-white/10 rounded-xl p-6 border border-white/20">
             <h2 className="text-xl font-semibold text-white mb-2">Getting Started with CareerForge.ai</h2>
             <p className="text-gray-300">Learn the basics of navigating the platform, setting up your profile, and understanding the core features.</p>
-            <a href="#" className="text-blue-400 hover:underline mt-2 block">Read Guide</a>
+            <a href="#!" className="text-blue-400 hover:underline mt-2 block">Read Guide</a>
           </div>
 
           <div className="bg-white/10 rounded-xl p-6 border border-white/20">
             <h2 className="text-xl font-semibold text-white mb-2">Mastering the Resume Builder</h2>
             <p className="text-gray-300">A comprehensive guide to using all features of the resume builder, including advanced tips for optimizing your resume for ATS.</p>
-            <a href="#" className="text-blue-400 hover:underline mt-2 block">Watch Tutorial</a>
+            <a href="#!" className="text-blue-400 hover:underline mt-2 block">Watch Tutorial</a>
           </div>
 
           <div className="bg-white/10 rounded-xl p-6 border border-white/20">
             <h2 className="text-xl font-semibold text-white mb-2">Effective Job Search Strategies</h2>
             <p className="text-gray-300">Discover strategies for finding the right job opportunities using our Job Search feature, tailoring your applications, and preparing for interviews.</p>
-            <a href="#" className="text-blue-400 hover:underline mt-2 block">Download E-book</a>
+            <a href="#!" className="text-blue-400 hover:underline mt-2 block">Download E-book</a>
           </div>
 
           <div className="bg-white/10 rounded-xl p-6 border border-white/20">
             <h2 className="text-xl font-semibold text-white mb-2">Personalized Learning Roadmaps</h2>
             <p className="text-gray-300">Understand how to create and utilize personalized learning roadmaps to acquire new skills and advance your career.</p>
-            <a href="#" className="text-blue-400 hover:underline mt-2 block">Explore More</a>
+            <a href="#!" className="text-blue-400 hover:underline mt-2 block">Explore More</a>
           </div>
         </div>
       </div>

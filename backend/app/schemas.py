@@ -54,6 +54,7 @@ class Topic(TopicBase):
 class RoadmapBase(BaseModel):
     title: str
     description: Optional[str] = None
+    goal: Optional[str] = None
 
 class RoadmapCreate(RoadmapBase):
     pass
@@ -75,6 +76,7 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     id: int
+    is_email_verified: bool
     roadmaps: List[Roadmap] = []
 
     class Config:
@@ -82,6 +84,7 @@ class User(UserBase):
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str
 
 class TokenData(BaseModel):
@@ -111,3 +114,94 @@ class AIGeneratedRoadmap(BaseModel):
     title: str
     description: Optional[str] = None
     topics: List[AIGeneratedTopic]
+
+class AIRequest(BaseModel):
+    prompt: str
+    context: Optional[str] = None
+    model: Optional[str] = None
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
+
+class AIResponse(BaseModel):
+    response_content: str
+
+class SkillResponse(BaseModel):
+    skill_id: int
+    name: str
+    category: str
+    difficulty: str
+    status: str
+    due_date: Optional[str] = None
+
+class DashboardStats(BaseModel):
+    total_skills: int
+    completed_skills: int
+    pending_skills: int
+    not_started_skills: int
+    progress_percent: float
+
+class RoadmapProgress(BaseModel):
+    id: int
+    title: str
+    progress: float
+    total_skills: int
+    completed_skills: int
+
+class RoadmapProgress(BaseModel):
+    id: int
+    title: str
+    progress: float
+    total_skills: int
+    completed_skills: int
+
+class DashboardResponse(BaseModel):
+    user_id: int
+    username: str
+    roadmaps: List[RoadmapProgress]
+    dashboard_stats: DashboardStats
+    skills: List[SkillResponse]
+
+class RoadmapRequest(BaseModel):
+    prompt: str
+    context: Optional[str] = None
+    model: Optional[str] = None
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
+
+class RoadmapResponse(BaseModel):
+    roadmap_data: dict
+
+class TokenWithUser(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str
+    user: User
+
+__all__ = [
+    "Skill",
+    "SkillCreate",
+    "SkillStatusUpdate",
+    "Subtopic",
+    "SubtopicCreate",
+    "Topic",
+    "TopicCreate",
+    "Roadmap",
+    "RoadmapCreate",
+    "User",
+    "UserCreate",
+    "Token",
+    "TokenData",
+    "RoadmapGenerate",
+    "AIGeneratedSkill",
+    "AIGeneratedSubtopic",
+    "AIGeneratedTopic",
+    "AIGeneratedRoadmap",
+    "AIRequest",
+    "AIResponse",
+    "SkillResponse",
+    "DashboardStats",
+    "DashboardResponse",
+    "RoadmapRequest",
+    "RoadmapResponse",
+    "TokenWithUser",
+]

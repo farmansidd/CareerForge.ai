@@ -73,6 +73,9 @@ async def generate_roadmap_from_goal(career_goal: str) -> dict:
     Generates a roadmap (topics, subtopics, skills) from a career goal using Langchain AI.
     Includes caching, retry, and self-healing for malformed responses.
     """
+    # Sanitize input
+    career_goal = career_goal.strip()
+
     prompt_messages = [
         {
             "role": "system",

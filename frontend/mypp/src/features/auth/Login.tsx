@@ -1,13 +1,11 @@
 // src/features/auth/Login.tsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../store/store';
-import { login, reset } from './authSlice';
-import { Credentials } from './authTypes';
+import { useAuth } from '../../context/AuthContext'; // Import useAuth
 import { FaArrowRight, FaGithub } from 'react-icons/fa';
 
 export default function Login() {
-  const [formData, setFormData] = useState<Credentials>({
+  const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
@@ -15,34 +13,33 @@ export default function Login() {
   const { email, password } = formData;
 
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-
-  const { user, isLoading, isError, isSuccess, message } = useAppSelector(
-    (state: any) => state.auth
-  );
+  const { login, loading, user } = useAuth(); // Use useAuth hook
+  const [errorMessage, setErrorMessage] = useState<string | null>(null); // Local error state
 
   useEffect(() => {
-    if (isError) {
-      console.error(message);
+    if (user) {
+      navigate('/dashboard'); // Redirect if user is already logged in
     }
-
-    if (isSuccess || user) {
-      navigate('/dashboard');
-    }
-
-    dispatch(reset());
-  }, [user, isError, isSuccess, message, navigate, dispatch]);
+  }, [user, navigate]);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prevState) => ({
       ...prevState,
       [e.target.name]: e.target.value,
     }));
+    setErrorMessage(null); // Clear error on input change
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(login(formData));
+    setErrorMessage(null); // Clear previous errors
+
+    try {
+      await login(email, password);
+      // Redirection to dashboard is handled inside AuthContext on successful login
+    } catch (error: any) {
+      setErrorMessage(error.response?.data?.detail || 'Login failed. Please check your credentials.');
+    }
   };
 
   return (
@@ -99,9 +96,9 @@ export default function Login() {
           </div>
 
           {/* Form */}
-          {isError && (
+          {errorMessage && (
             <div className="mb-4 p-3 bg-red-900/50 border border-red-700/50 rounded-lg text-red-300 text-center">
-              {message}
+              {errorMessage}
             </div>
           )}
 
@@ -164,10 +161,10 @@ export default function Login() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={loading}
               className="w-full group flex items-center justify-center px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-bold text-lg transition-all duration-300 hover:from-cyan-600 hover:to-blue-700 hover:scale-[1.02] shadow-lg hover:shadow-cyan-500/30"
             >
-              {isLoading ? (
+              {loading ? (
                 <span>Signing In...</span>
               ) : (
                 <>

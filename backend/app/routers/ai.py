@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from app.dependencies import get_current_active_user
 from app.schemas import User
-from app.services.ai_service_updated import _call_ai_model # Import the AI model caller
+from app.services.ai_service_updated import generate_roadmap_from_goal as generate_roadmap_response # Import the AI model caller
 
 router = APIRouter(
     prefix="/ai",

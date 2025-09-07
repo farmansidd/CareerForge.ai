@@ -5,7 +5,6 @@ import {
   CheckSquare,
   Square,
   Bot,
-  Calendar,
   Target,
   TrendingUp,
   Clock,
@@ -14,10 +13,6 @@ import {
   X,
   Send,
   User,
-  CheckCircle2,
-  Circle,
-  BookOpen,
-  Star
 } from 'lucide-react';
 import RoadmapGeneratorForm from './RoadmapGeneratorForm'; // Import the new form component
 import LoadingSpinner from '../../components/LoadingSpinner'; // Assuming you have a LoadingSpinner component
@@ -27,7 +22,7 @@ import { updateSkillStatus } from '../../services/api';
 
 // Redux imports for AI chat
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
-import { sendMessage as sendAIChatMessage, addMessage, clearConversation } from '../../features/ai/aiSlice';
+import { sendMessage as sendAIChatMessage, addMessage } from '../../features/ai/aiSlice';
 import { AIMessage } from '../../features/ai/aiTypes';
 
 
@@ -39,10 +34,12 @@ const RoadmapPage: React.FC = () => {
     loading,
     error,
     fetchRoadmaps,
+    fetchRoadmapById,
+    generateRoadmap,
   } = useRoadmapStore();
 
   const dispatch = useAppDispatch();
-  const { messages: aiChatMessages, loading: aiChatLoading, error: aiChatError } = useAppSelector((state) => state.ai);
+  const { messages: aiChatMessages } = useAppSelector((state) => state.ai);
 
   const [showChatbot, setShowChatbot] = useState(false);
   const [chatMessages, setChatMessages] = useState<AIMessage[]>([]); // Initialize with empty array, will be populated from Redux
@@ -51,22 +48,50 @@ const RoadmapPage: React.FC = () => {
   const [completedSkills, setCompletedSkills] = useState([]);
 
   const [currentRoadmap, setCurrentRoadmap] = useState<Roadmap | undefined>(undefined);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (roadmaps.length > 0 && roadmapId) {
-      const foundRoadmap = roadmaps.find((r) => r.id === Number(roadmapId));
-      setCurrentRoadmap(foundRoadmap);
+    if (!roadmapId) {
+      fetchRoadmaps();
     }
-  }, [roadmaps, roadmapId]);
+  }, [roadmapId, fetchRoadmaps]);
 
   useEffect(() => {
-    fetchRoadmaps();
-  }, [fetchRoadmaps]);
+    if (roadmapId) {
+      const loadRoadmap = async () => {
+        try {
+          const roadmap = await fetchRoadmapById(Number(roadmapId));
+          if (roadmap) {
+            setCurrentRoadmap(roadmap);
+          } else {
+            console.error(`Roadmap with ID ${roadmapId} not found`);
+            setLocalError('Roadmap not found. It may have been deleted or you may not have access to it.');
+          }
+        } catch (error) {
+          console.error('Error loading roadmap:', error);
+          setLocalError('Failed to load roadmap. Please try again.');
+        }
+      };
+      loadRoadmap();
+    }
+  }, [roadmapId, fetchRoadmapById]);
 
   useEffect(() => {
     if (currentRoadmap) {
-      setPendingSkills(currentRoadmap.topics.flatMap(topic => topic.subtopics.flatMap(subtopic => subtopic.skills.map(skill => ({...skill, category: topic.name, estimatedTime: '1 week'})))));
-      setCompletedSkills([]);
+      const allSkills = currentRoadmap.topics.flatMap(topic =>
+        topic.subtopics.flatMap(subtopic =>
+          subtopic.skills.map(skill => ({
+            ...skill,
+            uniqueId: `${topic.id}-${subtopic.id}-${skill.id}`,
+            category: topic.name,
+            estimatedTime: '1 week'
+          }))
+        )
+      );
+      const completed = allSkills.filter(skill => skill.completed);
+      const pending = allSkills.filter(skill => !skill.completed);
+      setPendingSkills(pending);
+      setCompletedSkills(completed);
     }
   }, [currentRoadmap]);
 
@@ -76,8 +101,16 @@ const RoadmapPage: React.FC = () => {
   }, [aiChatMessages]);
 
   const handleRoadmapGenerated = (newRoadmap: Roadmap) => {
-    useRoadmapStore.setState(state => ({ roadmaps: [...state.roadmaps, newRoadmap] }));
     navigate(`/roadmaps/${newRoadmap.id}`);
+  };
+
+  const handleRegenerate = async () => {
+    if (currentRoadmap && currentRoadmap.goal) {
+      const newRoadmap = await generateRoadmap(currentRoadmap.goal);
+      if (newRoadmap) {
+        navigate(`/roadmaps/${newRoadmap.id}`);
+      }
+    }
   };
 
   const sendMessage = async () => {
@@ -97,14 +130,14 @@ const RoadmapPage: React.FC = () => {
     }
   };
 
-  const moveSkillToCompleted = async (skillId: number) => {
+  const moveSkillToCompleted = async (skillUniqueId: string) => {
+    const skill = pendingSkills.find(s => s.uniqueId === skillUniqueId);
+    if (!skill) return;
+
     try {
-      await updateSkillStatus(skillId, 'complete');
-      const skill = pendingSkills.find(s => s.id === skillId);
-      if (skill) {
-        setCompletedSkills([...completedSkills, skill]);
-        setPendingSkills(pendingSkills.filter(s => s.id !== skillId));
-      }
+      await updateSkillStatus(skill.id, 'complete');
+      setPendingSkills(pendingSkills.filter(s => s.uniqueId !== skillUniqueId));
+      setCompletedSkills([...completedSkills, skill]);
     } catch (error) {
       console.error("Failed to update skill status", error);
     }
@@ -116,6 +149,23 @@ const RoadmapPage: React.FC = () => {
 
   if (error) {
     return <div className="text-red-400 text-center p-4">{error}</div>;
+  }
+
+  if (localError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-6 flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6 shadow-2xl max-w-md text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">Error Loading Roadmap</h2>
+          <p className="text-red-400 mb-6">{localError}</p>
+          <button
+            onClick={() => navigate('/roadmaps')}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300"
+          >
+            Back to Roadmaps
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (!roadmapId || !currentRoadmap) {
@@ -191,6 +241,12 @@ const RoadmapPage: React.FC = () => {
               >
                 <Bot className="w-6 h-6" />
               </button>
+              <button
+                onClick={handleRegenerate}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-4 rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
+              >
+                Regenerate
+              </button>
             </div>
           </div>
         </div>
@@ -248,10 +304,10 @@ const RoadmapPage: React.FC = () => {
             </h2>
             <div className="space-y-4">
               {pendingSkills.map((skill) => (
-                <div key={skill.id} className="group backdrop-blur-sm bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition-all duration-300">
+                <div key={skill.uniqueId} className="group backdrop-blur-sm bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition-all duration-300">
                   <div className="flex items-center space-x-3">
                     <button
-                      onClick={() => moveSkillToCompleted(skill.id)}
+                      onClick={() => moveSkillToCompleted(skill.uniqueId)}
                       className="text-blue-300 hover:text-cyan-400 transition-colors duration-200"
                     >
                       <Square className="w-5 h-5" />
@@ -282,7 +338,7 @@ const RoadmapPage: React.FC = () => {
             </h2>
             <div className="space-y-4">
               {completedSkills.map((skill) => (
-                <div key={skill.id} className="backdrop-blur-sm bg-white/5 rounded-lg p-4 border border-white/10">
+                <div key={skill.uniqueId} className="backdrop-blur-sm bg-white/5 rounded-lg p-4 border border-white/10">
                   <div className="flex items-center space-x-3">
                     <CheckSquare className="w-5 h-5 text-green-400" />
                     <div className="flex-1">

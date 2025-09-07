@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AI from '../assets/AI.jpg';
 import { Link } from 'react-router-dom';
 import { 
-  FaArrowRight, FaPlay, FaCheck, FaStar, 
+  FaArrowRight, FaStar, 
   FaGithub, FaLinkedin, FaTwitter,
   FaLaptopCode, FaBrain, FaTrophy, FaRoad, FaChartLine, FaBullseye
 } from 'react-icons/fa';
@@ -235,13 +235,13 @@ const LandingPage: React.FC = () => {
                 </span>
               </div>
               <div className="flex space-x-4">
-                <a href="#" className="text-gray-400 hover:text-cyan-400 transition">
+                <a href="#!" className="text-gray-400 hover:text-cyan-400 transition">
                   <FaLinkedin size={20} />
                 </a>
-                <a href="#" className="text-gray-400 hover:text-cyan-400 transition">
+                <a href="#!" className="text-gray-400 hover:text-cyan-400 transition">
                   <FaTwitter size={20} />
                 </a>
-                <a href="#" className="text-gray-400 hover:text-cyan-400 transition">
+                <a href="#!" className="text-gray-400 hover:text-cyan-400 transition">
                   <FaGithub size={20} />
                 </a>
               </div>
@@ -251,33 +251,33 @@ const LandingPage: React.FC = () => {
               <div>
                 <h3 className="text-gray-400 uppercase text-sm font-bold mb-4">Company</h3>
                 <ul className="space-y-2">
-                  <li><a href="#" className="hover:text-cyan-400 transition">About</a></li>
-                  <li><a href="#" className="hover:text-cyan-400 transition">Careers</a></li>
-                  <li><a href="#" className="hover:text-cyan-400 transition">Blog</a></li>
+                  <li><a href="#!" className="hover:text-cyan-400 transition">About</a></li>
+                  <li><a href="#!" className="hover:text-cyan-400 transition">Careers</a></li>
+                  <li><a href="#!" className="hover:text-cyan-400 transition">Blog</a></li>
                 </ul>
               </div>
               <div>
                 <h3 className="text-gray-400 uppercase text-sm font-bold mb-4">Resources</h3>
                 <ul className="space-y-2">
-                  <li><a href="#" className="hover:text-cyan-400 transition">Help Center</a></li>
-                  <li><a href="#" className="hover:text-cyan-400 transition">Tutorials</a></li>
-                  <li><a href="#" className="hover:text-cyan-400 transition">Community</a></li>
+                  <li><a href="#!" className="hover:text-cyan-400 transition">Help Center</a></li>
+                  <li><a href="#!" className="hover:text-cyan-400 transition">Tutorials</a></li>
+                  <li><a href="#!" className="hover:text-cyan-400 transition">Community</a></li>
                 </ul>
               </div>
               <div>
                 <h3 className="text-gray-400 uppercase text-sm font-bold mb-4">Legal</h3>
                 <ul className="space-y-2">
-                  <li><a href="#" className="hover:text-cyan-400 transition">Privacy</a></li>
-                  <li><a href="#" className="hover:text-cyan-400 transition">Terms</a></li>
-                  <li><a href="#" className="hover:text-cyan-400 transition">Cookies</a></li>
+                  <li><a href="#!" className="hover:text-cyan-400 transition">Privacy</a></li>
+                  <li><a href="#!" className="hover:text-cyan-400 transition">Terms</a></li>
+                  <li><a href="#!" className="hover:text-cyan-400 transition">Cookies</a></li>
                 </ul>
               </div>
               <div>
                 <h3 className="text-gray-400 uppercase text-sm font-bold mb-4">Contact</h3>
                 <ul className="space-y-2">
-                  <li><a href="#" className="hover:text-cyan-400 transition">Support</a></li>
-                  <li><a href="#" className="hover:text-cyan-400 transition">Sales</a></li>
-                  <li><a href="#" className="hover:text-cyan-400 transition">Feedback</a></li>
+                  <li><a href="#!" className="hover:text-cyan-400 transition">Support</a></li>
+                  <li><a href="#!" className="hover:text-cyan-400 transition">Sales</a></li>
+                  <li><a href="#!" className="hover:text-cyan-400 transition">Feedback</a></li>
                 </ul>
               </div>
             </div>
