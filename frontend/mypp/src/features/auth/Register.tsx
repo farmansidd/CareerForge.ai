@@ -1,12 +1,14 @@
 // src/features/auth/Register.tsx
 import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { register } from './authSlice';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext'; // Import useAuth
-import { FaArrowRight, FaGithub } from 'react-icons/fa';
+import type { AppDispatch, RootState } from '../../store/store';
 
 export default function Register() {
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { register, loading } = useAuth(); // Use useAuth hook
+  const { isLoading, isError, message } = useSelector((state: RootState) => state.auth);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -15,53 +17,121 @@ export default function Register() {
     confirmPassword: ''
   });
 
-  // State for local form errors (e.g., password mismatch, API errors)
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [errors, setErrors] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [passwordCriteria, setPasswordCriteria] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    special: false,
+  });
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const checkPasswordCriteria = (password: string) => {
+    setPasswordCriteria({
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /\d/.test(password),
+      special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+    });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setLocalError(null); // Clear local error on input change
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    if (name === 'password') {
+      checkPasswordCriteria(value);
+    }
+
+    if (errors[name as keyof typeof errors]) {
+      setErrors({ ...errors, [name]: '' });
+    }
+  };
+
+  const validateForm = (): boolean => {
+    let isValid = true;
+    const newErrors = { username: '', email: '', password: '', confirmPassword: '' };
+
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
+      isValid = false;
+    } else if (formData.username.length < 2) {
+      newErrors.username = 'Username must be at least 2 characters';
+      isValid = false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+      isValid = false;
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+      isValid = false;
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+      isValid = false;
+    } else if (!passwordCriteria.length || !passwordCriteria.uppercase || !passwordCriteria.lowercase || !passwordCriteria.number || !passwordCriteria.special) {
+      newErrors.password = 'Password does not meet the requirements';
+      isValid = false;
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+      isValid = false;
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLocalError(null); // Clear previous local errors
-
-    if (formData.password !== formData.confirmPassword) {
-      setLocalError('Passwords do not match');
+    setSuccessMessage(null);
+    
+    if (!validateForm()) {
       return;
     }
+
+    const resultAction = await dispatch(register({
+      username: formData.username,
+      email: formData.email,
+      password: formData.password
+    }));
     
-    try {
-      await register(formData.username, formData.email, formData.password);
-    } catch (error: any) {
-      setLocalError(error.response?.data?.detail || 'Registration failed. Please try again.');
+    if (register.fulfilled.match(resultAction)) {
+      setSuccessMessage('Please check your mailbox and confirm your registration. You can log in after verification.');
+      setFormData({ username: '', email: '', password: '', confirmPassword: '' });
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 relative overflow-hidden">
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-cyan-500/5 to-transparent rounded-full blur-3xl animate-float"></div>
         <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-blue-500/5 to-transparent rounded-full blur-3xl animate-float-delayed"></div>
       </div>
 
-      {/* Glass Card Container */}
       <div className="relative z-10 w-full max-w-md">
         <div className="bg-slate-800/40 backdrop-blur-xl border border-cyan-500/30 rounded-3xl p-8 shadow-2xl shadow-cyan-500/10">
-          {/* Brand Header */}
-          {/* <div className="flex justify-center mb-8">
-            <div className="flex items-center space-x-2">
-              <div className="bg-cyan-500 w-10 h-10 rounded-full flex items-center justify-center">
-                <div className="text-gray-900 font-bold text-lg">CF</div>
-              </div>
-              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
-                CareerForge<span className="text-cyan-300">.ai</span>
-              </span>
-            </div>
-          </div> */}
-
+          
           <h2 className="text-3xl font-bold text-center mb-2 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
             Create Your Account
           </h2>
@@ -69,109 +139,117 @@ export default function Register() {
             Start your career journey with AI-powered guidance
           </p>
 
-          {/* Social Login Buttons */}
-          <div className="flex gap-4 mb-6">
-            <button className="flex-1 flex items-center justify-center py-3 bg-slate-700/50 rounded-xl border border-slate-600 hover:bg-slate-700 transition-all group">
-              <svg className="mr-2 w-5 h-5" viewBox="0 0 24 24">
-                <path
-                  d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"
-                  fill="currentColor"
-                />
-              </svg>
-              <span>Google</span>
-            </button>
-            <button className="flex-1 flex items-center justify-center py-3 bg-slate-700/50 rounded-xl border border-slate-600 hover:bg-slate-700 transition-all group">
-              <FaGithub className="text-gray-300 group-hover:text-white mr-2" />
-              <span>GitHub</span>
-            </button>
-          </div>
-
-          <div className="flex items-center my-6">
-            <div className="flex-grow border-t border-slate-700"></div>
-            <span className="mx-4 text-slate-500 text-sm">OR CONTINUE WITH</span>
-            <div className="flex-grow border-t border-slate-700"></div>
-          </div>
-
-          {/* Form */}
-          {localError && ( // Display local error
+          {isError && (
             <div className="mb-4 p-3 bg-red-900/50 border border-red-700/50 rounded-lg text-red-300 text-center">
-              {localError}
+              {message === 'User already exists' ? (
+                <>
+                  User already exists. Please <Link to="/login" className="font-medium text-cyan-400 hover:text-cyan-300">Sign In</Link>.
+                </>
+              ) : (
+                message
+              )}
+            </div>
+          )}
+          {successMessage && (
+            <div className="mb-4 p-3 bg-green-900/50 border border-green-700/50 rounded-lg text-green-300 text-center">
+              {successMessage}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-              </div>
+            <div>
               <input
-                name="username" // Changed from name to username
+                name="username"
                 type="text"
-                placeholder="Username" // Changed from Full Name to Username
+                placeholder="Username"
+                value={formData.username}
                 onChange={handleChange}
-                required
-                className="w-full pl-12 pr-4 py-3 bg-slate-800/70 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 text-white transition-all"
+                className="w-full pl-4 pr-4 py-3 bg-slate-800/70 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 text-white transition-all"
               />
+              {errors.username && <p className="text-red-400 text-sm mt-1">{errors.username}</p>}
             </div>
 
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                </svg>
-              </div>
+            <div>
               <input
                 name="email"
                 type="email"
                 placeholder="Email Address"
+                value={formData.email}
                 onChange={handleChange}
-                required
-                className="w-full pl-12 pr-4 py-3 bg-slate-800/70 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 text-white transition-all"
+                className="w-full pl-4 pr-4 py-3 bg-slate-800/70 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 text-white transition-all"
               />
+              {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
             </div>
 
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
               <input
                 name="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Password"
+                value={formData.password}
                 onChange={handleChange}
-                required
-                className="w-full pl-12 pr-4 py-3 bg-slate-800/70 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 text-white transition-all"
+                className="w-full pl-4 pr-12 py-3 bg-slate-800/70 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 text-white transition-all"
               />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 cursor-pointer" onClick={togglePasswordVisibility}>
+                {showPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                    <path d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.243c-.362-.74-.9-1.382-1.55-1.972l-2.58-2.58A.75.75 0 0 0 15.25 8l-1.47-1.47a.75.75 0 0 0-1.06-1.06L5.57 2.22ZM9 12.25A3.25 3.25 0 0 0 12.25 9l-3.25 3.25Z" />
+                    <path d="M15 12a3 3 0 0 1-3 3l-1.75-1.75a.75.75 0 0 0-1.06-1.06L5.57 8.57A3 3 0 0 1 9 5.57l4.43 4.43A3.07 3.07 0 0 1 15 12Z" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                    <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                    <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+            </div>
+            {errors.password && <p className="text-red-400 text-sm -mt-2">{errors.password}</p>}
+            <div className="text-xs text-slate-400 px-4 -mt-2">
+              <p className="mb-1">Password must include:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li className={`flex items-center ${passwordCriteria.length ? 'text-green-400' : ''}`}>
+                  {passwordCriteria.length ? '✓' : '○'} At least 8 characters
+                </li>
+                <li className={`flex items-center ${passwordCriteria.uppercase ? 'text-green-400' : ''}`}>
+                  {passwordCriteria.uppercase ? '✓' : '○'} One uppercase letter
+                </li>
+                <li className={`flex items-center ${passwordCriteria.lowercase ? 'text-green-400' : ''}`}>
+                  {passwordCriteria.lowercase ? '✓' : '○'} One lowercase letter
+                </li>
+                <li className={`flex items-center ${passwordCriteria.number ? 'text-green-400' : ''}`}>
+                  {passwordCriteria.number ? '✓' : '○'} One number
+                </li>
+                <li className={`flex items-center ${passwordCriteria.special ? 'text-green-400' : ''}`}>
+                  {passwordCriteria.special ? '✓' : '○'} One special character
+                </li>
+              </ul>
             </div>
 
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
               <input
                 name="confirmPassword"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Confirm Password"
+                value={formData.confirmPassword}
                 onChange={handleChange}
-                required
-                className="w-full pl-12 pr-4 py-3 bg-slate-800/70 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 text-white transition-all"
+                className="w-full pl-4 pr-12 py-3 bg-slate-800/70 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 text-white transition-all"
               />
+               <div className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 cursor-pointer" onClick={togglePasswordVisibility}>
+                {showPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                    <path d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.243c-.362-.74-.9-1.382-1.55-1.972l-2.58-2.58A.75.75 0 0 0 15.25 8l-1.47-1.47a.75.75 0 0 0-1.06-1.06L5.57 2.22ZM9 12.25A3.25 3.25 0 0 0 12.25 9l-3.25 3.25Z" />
+                    <path d="M15 12a3 3 0 0 1-3 3l-1.75-1.75a.75.75 0 0 0-1.06-1.06L5.57 8.57A3 3 0 0 1 9 5.57l4.43 4.43A3.07 3.07 0 0 1 15 12Z" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                    <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                    <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
             </div>
+            {errors.confirmPassword && <p className="text-red-400 text-sm -mt-2">{errors.confirmPassword}</p>}
 
             <div className="flex items-center mb-4">
               <input
@@ -186,15 +264,17 @@ export default function Register() {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full group flex items-center justify-center px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-bold text-lg transition-all duration-300 hover:from-cyan-600 hover:to-blue-700 hover:scale-[1.02] shadow-lg hover:shadow-cyan-500/30"
+              disabled={isLoading}
+              className="w-full group flex items-center justify-center px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-bold text-lg text-white transition-all duration-300 hover:from-cyan-600 hover:to-blue-700 hover:scale-[1.02] shadow-lg hover:shadow-cyan-500/30 disabled:opacity-50"
             >
-              {loading ? (
+              {isLoading ? (
                 <span>Creating Account...</span>
               ) : (
                 <>
                   <span>Create Account</span>
-                  <FaArrowRight className="ml-3 transition-transform duration-300 group-hover:translate-x-1" />
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 ml-3 transition-transform duration-300 group-hover:translate-x-1">
+                    <path fillRule="evenodd" d="M16.72 7.72a.75.75 0 011.06 0l3.75 3.75a.75.75 0 010 1.06l-3.75 3.75a.75.75 0 11-1.06-1.06l2.47-2.47H3a.75.75 0 010-1.5h16.19l-2.47-2.47a.75.75 0 010-1.06z" clipRule="evenodd" />
+                  </svg>
                 </>
               )}
             </button>
@@ -208,8 +288,6 @@ export default function Register() {
           </div>
         </div>
       </div>
-
-      {/* Animation styles */}
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }

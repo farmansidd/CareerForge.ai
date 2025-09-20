@@ -1,14 +1,14 @@
 import { AuthResponse, Credentials, RegisterData, User } from './authTypes';
 import { api } from '../../services/api'; // Use the configured axios instance
 
-const API_URL = '/'; 
+const API_URL = '/auth/';
 
 // Register user
 const register = async (userData: RegisterData): Promise<User> => { // Change return type to User
     const response = await api.post(API_URL + 'register', userData);
     // No token or user data to store from register response directly
     return response.data; // This will be the User object
-};
+}; 
 
 // Login user
 const login = async (credentials: Credentials): Promise<AuthResponse> => {

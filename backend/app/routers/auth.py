@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 from jose import jwt
 import logging
-
+ 
 from fastapi_mail import FastMail, MessageSchema
 from app.core.mail import conf
 

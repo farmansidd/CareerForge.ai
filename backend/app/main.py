@@ -8,6 +8,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware # Added import
 from app.routers import auth, users, roadmaps, dashboard, ai
+from app.services import ai_learning
 import app.models as models
 from app.database import engine
 from app.core.config import CORS_ORIGINS
@@ -48,6 +49,8 @@ app.include_router(roadmaps.router, prefix="/api/v1", tags=["Roadmaps"])
 
 app.include_router(dashboard.router, prefix="/api/v1", tags=["Dashboard"])
 app.include_router(ai.router, prefix="/api/v1", tags=["AI"])
+app.include_router(ai_learning.router, prefix="/api/v1/ai-learning", tags=["AI Learning"])
+
 
 @app.get("/")
 def read_root():

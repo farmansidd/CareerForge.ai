@@ -49,6 +49,9 @@ const RoadmapPage: React.FC = () => {
 
   const [currentRoadmap, setCurrentRoadmap] = useState<Roadmap | undefined>(undefined);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [videoLoading, setVideoLoading] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!roadmapId) {
@@ -110,6 +113,32 @@ const RoadmapPage: React.FC = () => {
       if (newRoadmap) {
         navigate(`/roadmaps/${newRoadmap.id}`);
       }
+    }
+  };
+
+  const handleWatch = async () => {
+    if (!currentRoadmap?.goal) return;
+    setVideoLoading(true);
+    setVideoError(null);
+    setSelectedVideoId(null);
+    try {
+        // This points to the backend service you created.
+        const response = await fetch(`http://localhost:8000/api/v1/ai-learning/search-video?query=${encodeURIComponent(currentRoadmap.goal)}`);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to fetch video.');
+        }
+        const data = await response.json();
+        if (data.videoId) {
+            setSelectedVideoId(data.videoId);
+        } else {
+            throw new Error('No video ID was found in the response.');
+        }
+    } catch (error: any) {
+        console.error("Failed to fetch video", error);
+        setVideoError(error.message || 'An unexpected error occurred.');
+    } finally {
+        setVideoLoading(false);
     }
   };
 
@@ -227,19 +256,21 @@ const RoadmapPage: React.FC = () => {
               <p className="text-blue-200">{currentRoadmap.description}</p>
             </div>
             <div className="flex gap-4">
+              {/* Watch Button */}
               <button
-                onClick={() => {
-                  // Handle start learning
-                }}
-                className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white p-4 rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
+                onClick={handleWatch}
+                disabled={videoLoading}
+                className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Start Learning
+                {videoLoading ? <LoadingSpinner /> : '🎥 Watch'}
               </button>
+
+              {/* AI Learn Button */}
               <button
                 onClick={() => setShowChatbot(true)}
-                className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white p-4 rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
+                className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
               >
-                <Bot className="w-6 h-6" />
+                🤖 AI Learn
               </button>
               <button
                 onClick={handleRegenerate}
@@ -359,6 +390,24 @@ const RoadmapPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Video Player Section */}
+        {(videoLoading || selectedVideoId || videoError) && (
+          <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20 mt-8">
+            <h2 className="text-2xl font-bold text-white mb-4">Now Watching</h2>
+            {videoLoading && <LoadingSpinner />}
+            {videoError && <div className="text-red-400 text-center p-4">{videoError}</div>}
+            {selectedVideoId && (
+              <iframe
+                className="w-full h-96 rounded-xl shadow-lg"
+                src={`https://www.youtube.com/embed/${selectedVideoId}`}
+                title="Learning Video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            )}
+          </div>
+        )}
 
         {/* AI Chatbot Modal */}
         {showChatbot && (
