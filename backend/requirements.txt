@@ -23,6 +23,7 @@ slowapi
 cryptography
 langchain
 openai
+gunicorn
 langchain-google-genai
 fastapi-mail==1.4.1
 requests
